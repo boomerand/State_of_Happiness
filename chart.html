@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>State of Happiness Charts</title>
+	<link rel="stylesheet" type="text/css" href="assets/css/styles.css">
+	<link rel="stylesheet" type="text/css" href="assets/css/svg.css">
+	<link href='http://fonts.googleapis.com/css?family=Lobster|Roboto+Slab:400,700|Roboto:400,500,500italic,700,700italic,900,900italic,400italic' rel='stylesheet' type='text/css'>
+	<script type="text/javascript" src="assets/js/d3.v3.js"></script>
+</head>
+<body>
+	<header>
+		<div id="header-content">
+			<a href="index.html">
+				<img id="smile" class="layout" alt="happy face" src="assets/images/happy_face.png">
+				<p id="logo" class="layout">State of Happiness</p>
+			</a>
+			<p class="link"><a href="map.html">View as map</a></p>
+		</div>
+	</header>
+	<div id="container">
+		<p id="chart-title">Life Expectancy (years)</p>
+		<p class="chart-subtitle">Hover over each dot to view state</p>
+		<div id="categories" class="layout">
+			<h3>Select Category</h3>
+			<button id="cat-01">Life Expectancy</button>
+			<button id="cat-02">Obesity</button>
+			<button id="cat-03">Median Income</button>
+			<button id="cat-04">Education</button>
+		</div>
+		<div id="svg-container" class="layout">
+			
+			<div id="state"><p></p></div>
+			<script>
+				// load data set
+				d3.csv("chart_data.csv", function(data) {
+					// Create svg element
+					var canvas = d3.select("#container").append("svg")
+						.attr("width", 880)
+						.attr("height", 550)
+						.attr("id", "chart")
+						.style("margin", "45px 0 0")
+
+					// Create scale functions		
+					var xScale = d3.scale.linear()
+										 .domain([parseInt(d3.min(data, function(d) { return d.life; }))+0.5, d3.max(data, function(d) { return d.life; })])
+										 .range([50, 800])
+
+					var yScale = d3.scale.linear()
+										 .domain([60, parseInt(d3.max(data, function(d) { return d.index; }))+1])
+										 .range([490, 60])
+
+					// Define X axis					 	
+					var xAxis = d3.svg.axis()
+									  .scale(xScale)
+									  .orient("bottom")
+
+					// Define Y axis
+					var yAxis = d3.svg.axis()
+									  .scale(yScale)
+									  .orient("left")
+					
+					// Show state name on hover
+					var showStateName = function() {
+						var circle = d3.select(this)
+						d3.select("#state p").text(circle.attr("name"));
+					}
+
+					var removeStateName = function() {
+						d3.select("#state p").text("");
+					}
+
+					// Create circles
+					canvas.append("g")
+						.attr("id", "circles")
+						.selectAll("circle")
+						.data(data)
+						.enter()
+						.append("circle")
+						.attr("cx", function(d) {
+							return xScale(d.life)
+						})
+						.attr("cy", function(d) {
+							return yScale(d.index)
+						})
+						.attr("r", 12)
+						.attr("fill", function(d){
+							return d.color;
+						})
+						.attr("name", function(d) {
+							return d.state;
+						})
+						.on("mouseover", showStateName)
+						.on("mouseout", removeStateName)
+
+					// Create X axis
+					canvas.append('g')
+						.attr("class", "x axis")
+						.attr("transform", "translate(0, " + 490 + ")")
+						.call(xAxis)
+
+					// Create X axis label
+					canvas.append("text")
+					    .attr("class", "x label")
+					    .attr("text-anchor", "middle")
+					    .attr("x", 440)
+					    .attr("y", 530)
+					    .text("Life Expectancy (in years)")
+
+					// Create Y axis
+					canvas.append('g')
+						.attr("class", "y axis")
+						.attr("transform", "translate(" + 45 + ", 0)")
+						.call(yAxis)
+
+					// Create Y axis label
+					canvas.append("text")
+					    .attr("class", "y label")
+					    .attr("text-anchor", "middle")
+					    .attr("y", 12)
+					    .attr("dx", -275)
+					    .attr("transform", "rotate(-90)")
+					    .text("Well-Being Index (scale 0-100)")
+
+					// Update X Axis label
+					var updateXAxisLabel = function(title){
+						// Update X axis
+						canvas.select(".x.axis")
+							.transition()
+							.duration(1500)
+							.call(xAxis);
+
+						// Update labels
+						canvas.select(".x.label")
+			    			.transition()
+			    			.text("")
+			    			.transition()
+			    			.delay(1500)
+			    			.text(title)
+
+		    			d3.select("#chart-title")
+							.text(title)
+					}
+
+					d3.select("#cat-01")				
+						.on("click", function(){
+
+							// Update X scale domain
+							xScale.domain([parseInt(d3.min(data, function(d) { return d.life; }))+0.5, d3.max(data, function(d) { return d.life; })])
+							
+							// Update all circles
+							canvas.selectAll("circle")
+							   	.data(data)
+							   	.transition()
+							   	.duration(2000)
+							   	.attr("cx", function(d) {
+									return xScale(d.life);
+							   	})
+
+							updateXAxisLabel("Life Expectancy (years)")
+						})
+
+					d3.select("#cat-02")				
+						.on("click", function(){
+
+							// Update X scale domain
+							xScale.domain([d3.min(data, (function(d) { return d.obesity }))-0.5, d3.max(data, function(d) { return d.obesity; })])
+
+							// Update all circles
+							canvas.selectAll("circle")
+							   	.data(data)
+							   	.transition()
+							   	.duration(2000)
+							   	.attr("cx", function(d) {
+									return xScale(d.obesity);
+							   	})
+
+							updateXAxisLabel("Obesity (population percentage)")   	
+						})
+
+					d3.select("#cat-03")				
+						.on("click", function(){
+
+							// Update X scale domain
+							xScale.domain([parseInt(d3.min(data, function(d) { return d.income }))-1000, d3.max(data, function(d) { return d.income; })])
+
+							// Update all circles
+							canvas.selectAll("circle")
+							   	.data(data)
+							   	.transition()
+							   	.duration(2000)
+							   	.attr("cx", function(d) {
+									return xScale(d.income);
+							   	})
+
+							updateXAxisLabel("Median Income (US$)")
+						})
+
+					d3.select("#cat-04")				
+						.on("click", function(){
+
+							// Update X scale domain
+							xScale.domain([d3.min(data, (function(d) { return d.education }))-0.5, d3.max(data, function(d) { return d.education; })])
+
+							// Update all circles
+							canvas.selectAll("circle")
+							   	.data(data)
+							   	.transition()
+							   	.duration(2000)
+							   	.attr("cx", function(d) {
+									return xScale(d.education);
+							   	})
+
+							updateXAxisLabel("Education - high school or higher (population percentage)")
+						})
+				})
+			</script>
+		</div>
+	</div>	
+
+	<footer>
+		<p class="copyright">© 2014 Rand DeCastro. All Rights Reserved.</p>
+	</footer>	
+</body>
+</html>

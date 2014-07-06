@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>State of Happiness Maps</title>
+	<link rel="stylesheet" type="text/css" href="assets/css/styles.css">
+	<link rel="stylesheet" type="text/css" href="assets/css/svg.css">
+	<link href='http://fonts.googleapis.com/css?family=Lobster|Roboto+Slab:400,700|Roboto:400,500,500italic,700,700italic,900,900italic,400italic' rel='stylesheet' type='text/css'>
+	<script type="text/javascript" src="assets/js/d3.v3.js"></script>
+</head>
+<body>
+	<header>
+		<div id="header-content">
+			<a href="index.html">
+				<img id="smile" class="layout" alt="happy face" src="assets/images/happy_face.png">
+				<p id="logo" class="layout">State of Happiness</p>
+			</a>
+			<p class="link"><a href="chart.html">View as chart</a></p>
+		</div>
+	</header>
+	<div id="map-container">
+		<p id="chart-title">Hover over each state to view rankings</p>
+		<script src="http://d3js.org/topojson.v1.min.js"></script>
+		<script src="assets/js/datamaps.all.min.js"></script>
+		<div id="map"></div>
+		<script>
+			// Format csv file into array object and load into datamaps
+			d3.csv("map_data.csv", function(error, mapdata) {
+				for (var i = 0; i < mapdata.length; i++) {
+					// Create fillKey value based on ranking
+					mapdata[i].fillKey = {};
+					if (mapdata[i].rank <= 10){
+						mapdata[i].fillKey = "Top 10";
+					} 
+					else if (mapdata[i].rank > 10 && mapdata[i].rank <= 20){
+						mapdata[i].fillKey = "11-20";
+					}
+					else if (mapdata[i].rank > 20 && mapdata[i].rank <= 30){
+						mapdata[i].fillKey = "21-30";
+					}
+					else if (mapdata[i].rank > 30 && mapdata[i].rank <= 40){
+						mapdata[i].fillKey = "31-40";
+					}
+					else {
+						mapdata[i].fillKey = "41-50";
+					}
+					// Create array
+					mapdata[mapdata[i].ISO] = mapdata[i]; 
+					// console.log(mapdata);
+					delete mapdata[i].ISO;
+					delete mapdata[i];
+				}
+				console.log(mapdata);
+				myMap.updateChoropleth(mapdata);
+			});	
+
+			// Draw new map	
+		    var myMap = new Datamap({
+		        element: document.getElementById('map'),
+		        scope: 'usa',
+		        fills:{
+		        	// GREEN MAP
+		        	'Top 10': "#fff3cb",
+		        	'11-20': "#d1d7a4",
+		        	'21-30': "#a7be80",
+		        	'31-40': "#81a561",
+		        	'41-50': "#5c8b43",
+		        	// BLUE-GREY MAP
+		        	// 'Top 10': "#d0c3b4",
+		        	// '11-20': "#b9a590",
+		        	// '21-30': "#a48970",
+		        	// '31-40': "#866f59",
+		        	// '41-50': "#5f4f3f",
+		        	defaultFill: "#444"
+		        },
+		        geographyConfig:{
+		        	borderColor:"#444",
+		        	highlightOnHover: true,
+		        	highlightFillColor: "DeepSkyBlue",
+		        	highlightBorderColor: "#444",
+		        	highlightBorderWidth: 1,
+		        	popupTemplate: function(geo, mapdata) {
+		        		return "<div class='hoverinfo'><p class='state-name'>" + geo.properties.name + "</p>" + 
+		        			"<p class='title-name'>Rank: " + "<span>" + mapdata.rank + "</span></p>" +
+		        			"<p class='title-name'>Life Expentancy: " + "<span>" + mapdata.life + "</span></p>" +
+		        			"<p class='title-name'>Obesity: " + "<span>" + mapdata.obesity + "%</span></p>" +
+		        			"<p class='title-name'>Median Income: $" + "<span>" + mapdata.income + "</span></p>" +
+		        			"<p class='title-name'>Education: " + "<span>" + mapdata.education + "%</span></div>"
+		        	}
+		        },
+		        data: {}
+		    });
+
+			function addLegend2(layer, data, options) {
+			    data = data || {};
+			    if ( !this.options.fills ) {
+			      return;
+			    }
+
+			    var html = '<ul class="list-inline">';
+			    var label = '';
+			    if ( data.legendTitle ) {
+			      html = '<h4>' + data.legendTitle + '</h4>' + html;
+			    }
+			    for ( var fillKey in this.options.fills ) {
+
+			    	if ( fillKey === 'defaultFill') {
+				        if (! data.defaultFillName ) {
+				          continue;
+				        }
+				        label = data.defaultFillName;
+			      	} else {
+				        if (data.labels && data.labels[fillKey]) {
+				          label = data.labels[fillKey];
+				        } else {
+				          label= fillKey;
+				        }
+			      	}
+			      	html += '<li class="key" style="border-top-color:' + this.options.fills[fillKey] + '">' + label + '</li>' 
+			    }
+			    
+			    html += '</ul>';
+
+			    var hoverover = d3.select( this.options.element ).append('div')
+			      	.attr('class', 'datamaps-legend')
+			      	.html(html);
+			  	}
+			    
+			    myMap.addPlugin("mylegend", addLegend2);
+			    
+			    myMap.mylegend({legendTitle: "Color Code"})
+
+			// Add state labels
+			myMap.labels(
+					{
+						labelColor: "#444",
+						fontSize: 12
+					}
+				);
+			document.getElementsByClassName('labels').childNodes.style.fill.value = "";
+
+
+		</script>		
+	</div>		
+
+	<footer>
+		<p class="copyright">© 2014 Rand DeCastro. All Rights Reserved.</p>
+	</footer>	
+</body>
+</html>
